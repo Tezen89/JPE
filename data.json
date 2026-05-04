@@ -14,7 +14,7 @@
     {
       "id": "01",
       "titre": "Ruines Vauluisant",
-      "periode": "XIe siècle",
+      "periode": "14ème siècle",
       "altitude": "",
       "duree_depuis_depart": "",
       "gps": {
@@ -45,7 +45,51 @@
         "accessibilite": "Accessible PMR",
         "animaux": "Chiens admis en laisse",
         "reseau": "4G bonne couverture"
-      }
+      },
+      "photo_apres": "",
+      "photo_avant": "",
+      "label_apres": "",
+      "label_avant": ""
+    },
+    {
+      "id": "02",
+      "titre": "Calvaire de St Charles Borromée",
+      "periode": "15ème siècle",
+      "altitude": "",
+      "duree_depuis_depart": "",
+      "gps": {
+        "lat": 47.739545,
+        "lng": 3.486091
+      },
+      "rayon_declenchement": 25,
+      "description": "Calvaire de la Biche en hommage à St Charles de Borromée",
+      "citation": "",
+      "audio": {
+        "titre": "",
+        "auteur": "",
+        "duree": "",
+        "duree_sec": 0,
+        "fichier": ""
+      },
+      "video": {
+        "titre": "",
+        "duree": "",
+        "url": ""
+      },
+      "ar": {
+        "titre": "",
+        "description": ""
+      },
+      "infos": {
+        "visite": "Privée",
+        "accessibilite": "Accessible PMR",
+        "animaux": "Chiens admis en laisse",
+        "reseau": "4G bonne couverture"
+      },
+      "photo_apres": "assets/images/fontaine.jpg",
+      "photo_avant": "assets/images/fontaine_archive.jpg",
+      "label_apres": "Aujourd'hui",
+      "label_avant": "1920.0"
     }
   ]
 }
