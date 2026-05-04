@@ -407,7 +407,8 @@
 // =============================================
 // CONFIGURATION — modifier uniquement ces URLs
 // =============================================
-const DATA_URL = 'data.json'; // chemin vers ton fichier JSON
+const DATA_URL   = 'data.json';
+const CONFIG_URL = 'config.json';
 
 // =============================================
 // CHARGEMENT ET RENDU
@@ -417,14 +418,25 @@ async function init() {
   const lieuId = params.get('lieu') || '01';
 
   try {
-    const res = await fetch(DATA_URL);
-    if (!res.ok) throw new Error('Fichier data.json introuvable');
-    const data = await res.json();
+    // Charger data + config en parallèle
+    const [resData, resConfig] = await Promise.all([
+      fetch(DATA_URL),
+      fetch(CONFIG_URL).catch(() => null)
+    ]);
+    if (!resData.ok) throw new Error('Fichier data.json introuvable');
+    const data = await resData.json();
+    const config = resConfig && resConfig.ok ? await resConfig.json() : {};
+
+    // Appliquer les couleurs CSS depuis config.json
+    if (config.couleurs) {
+      const root = document.documentElement;
+      Object.entries(config.couleurs).forEach(([k, v]) => root.style.setProperty(k, v));
+    }
 
     const lieu = data.lieux.find(l => l.id === lieuId);
     if (!lieu) throw new Error(`Lieu "${lieuId}" non trouvé dans data.json`);
 
-    render(lieu, data);
+    render(lieu, data, config);
   } catch (err) {
     document.getElementById('loading').style.display = 'none';
     const errorEl = document.getElementById('error');
@@ -433,11 +445,31 @@ async function init() {
   }
 }
 
-function render(lieu, data) {
+function render(lieu, data, config = {}) {
+  const t = config.textes_interface || {};
+  const opts = config.options || {};
   const total = data.sentier.total_lieux;
   const idx = data.lieux.findIndex(l => l.id === lieu.id);
   const prev = data.lieux[idx - 1] || null;
   const next = data.lieux[idx + 1] || null;
+
+  // LABELS INTERFACE depuis config.json
+  document.querySelectorAll('.section-label').forEach(el => {
+    const key = el.dataset.key;
+    if (key && t[key]) el.childNodes[0].textContent = t[key] + ' ';
+  });
+  const lienCarte = document.querySelector('.map-link');
+  if (lienCarte && t.lien_carte) lienCarte.textContent = t.lien_carte;
+  const btnAR = document.querySelector('.ar-btn span:first-child');
+  if (btnAR && t.btn_ar) btnAR.textContent = t.btn_ar;
+
+  // SECTIONS OPTIONNELLES
+  if (opts.afficher_slider === false) document.querySelector('.slider-section').style.display = 'none';
+  if (opts.afficher_audio === false)  document.querySelector('.audio-section').style.display = 'none';
+  if (opts.afficher_video === false)  document.querySelector('.video-section').style.display = 'none';
+  if (opts.afficher_ar === false)     document.querySelector('.ar-section').style.display = 'none';
+  if (opts.afficher_minimap === false) document.querySelector('.map-section').style.display = 'none';
+  if (opts.afficher_infos === false)  document.querySelector('.infos-section').style.display = 'none';
 
   // HERO
   document.title = lieu.titre + ' — ' + data.sentier.nom;
@@ -461,19 +493,45 @@ function render(lieu, data) {
   document.getElementById('desc-text').textContent = lieu.description;
   document.getElementById('desc-citation').textContent = lieu.citation;
 
-  // AUDIO
+  // AUDIO — lecteur HTML5 réel
   document.getElementById('audio-title').textContent = lieu.audio.titre;
-  document.getElementById('audio-auteur').textContent = lieu.audio.auteur;
+  document.getElementById('audio-auteur').textContent = lieu.audio.auteur || '';
   document.getElementById('audio-dur').textContent = lieu.audio.duree;
   document.getElementById('timeTotal').textContent = lieu.audio.duree;
-  setupAudio(lieu.audio.duree_sec);
+  setupAudio(lieu.audio.fichier, lieu.audio.duree_sec);
 
-  // VIDEO
+  // VIDEO — embed YouTube réel
   document.getElementById('video-titre').textContent = lieu.video.titre;
   document.getElementById('video-duree').textContent = lieu.video.duree;
   document.getElementById('videoCard').onclick = () => {
-    // En production : ouvrir l'URL Vimeo ou injecter un iframe
-    alert('🎬 Vidéo : ' + lieu.video.titre + '\n\nURL : ' + lieu.video.url);
+    const url = lieu.video.url;
+    if (!url) return;
+
+    // Extraire l'ID YouTube (formats : youtu.be/ID ou ?v=ID ou /embed/ID)
+    let ytId = null;
+    const m1 = url.match(/youtu\.be\/([^?&]+)/);
+    const m2 = url.match(/[?&]v=([^?&]+)/);
+    const m3 = url.match(/\/embed\/([^?&]+)/);
+    if (m1) ytId = m1[1];
+    else if (m2) ytId = m2[1];
+    else if (m3) ytId = m3[1];
+
+    const card = document.getElementById('videoCard');
+    if (ytId) {
+      // Remplacer la vignette par l'iframe YouTube
+      card.innerHTML = `<iframe
+        width="100%" height="100%"
+        src="https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+        style="position:absolute;inset:0;border-radius:10px">
+      </iframe>`;
+      card.style.cursor = 'default';
+    } else {
+      // URL non-YouTube : ouvrir dans un nouvel onglet
+      window.open(url, '_blank');
+    }
   };
 
   // AR
@@ -566,35 +624,60 @@ function initSlider() {
 }
 
 // =============================================
-// AUDIO PLAYER
+// AUDIO PLAYER — HTML5 réel
 // =============================================
-function setupAudio(totalSec) {
-  let currentSec = 0, playing = false, interval = null;
+function setupAudio(fichier, dureeSecFallback) {
+  // Créer l'élément audio caché
+  let audio = document.getElementById('audioEl');
+  if (!audio) {
+    audio = document.createElement('audio');
+    audio.id = 'audioEl';
+    audio.preload = 'metadata';
+    document.body.appendChild(audio);
+  }
+  audio.src = fichier;
 
-  function fmt(s) { return Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2,'0'); }
-  function updateProgress() {
-    document.getElementById('progressFill').style.width = (currentSec / totalSec * 100) + '%';
-    document.getElementById('timeCur').textContent = fmt(currentSec);
+  function fmt(s) {
+    if (isNaN(s)) s = 0;
+    return Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2,'0');
   }
 
+  function updateProgress() {
+    const cur  = audio.currentTime || 0;
+    const total = audio.duration || dureeSecFallback || 1;
+    document.getElementById('progressFill').style.width = (cur / total * 100) + '%';
+    document.getElementById('timeCur').textContent = fmt(cur);
+    if (!isNaN(audio.duration))
+      document.getElementById('timeTotal').textContent = fmt(audio.duration);
+  }
+
+  audio.addEventListener('timeupdate', updateProgress);
+  audio.addEventListener('ended', () => {
+    document.getElementById('btnPlay').textContent = '▶';
+  });
+  audio.addEventListener('error', () => {
+    document.getElementById('audio-auteur').textContent = '⚠️ Fichier audio introuvable : ' + fichier;
+  });
+
   document.getElementById('btnPlay').onclick = () => {
-    playing = !playing;
-    document.getElementById('btnPlay').textContent = playing ? '⏸' : '▶';
-    if (playing) {
-      interval = setInterval(() => {
-        currentSec = Math.min(totalSec, currentSec + 1);
-        updateProgress();
-        if (currentSec >= totalSec) { playing = false; document.getElementById('btnPlay').textContent = '▶'; clearInterval(interval); }
-      }, 1000);
-    } else { clearInterval(interval); }
+    if (audio.paused) {
+      audio.play();
+      document.getElementById('btnPlay').textContent = '⏸';
+    } else {
+      audio.pause();
+      document.getElementById('btnPlay').textContent = '▶';
+    }
   };
 
-  document.getElementById('btnBack').onclick = () => { currentSec = Math.max(0, currentSec - 10); updateProgress(); };
-  document.getElementById('btnFwd').onclick = () => { currentSec = Math.min(totalSec, currentSec + 10); updateProgress(); };
+  document.getElementById('btnBack').onclick = () => {
+    audio.currentTime = Math.max(0, audio.currentTime - 10);
+  };
+  document.getElementById('btnFwd').onclick = () => {
+    audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+  };
   document.getElementById('progressBar').onclick = e => {
     const rect = e.currentTarget.getBoundingClientRect();
-    currentSec = Math.round(((e.clientX - rect.left) / rect.width) * totalSec);
-    updateProgress();
+    audio.currentTime = ((e.clientX - rect.left) / rect.width) * (audio.duration || dureeSecFallback || 0);
   };
 }
 
