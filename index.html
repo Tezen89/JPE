@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentier du Patrimoine</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #F5F0E8;
+    --parchment: #EDE5D0;
+    --earth: #8B6F47;
+    --earth-dark: #5C4730;
+    --moss: #4A6741;
+    --moss-light: #6B8F62;
+    --stone: #9E9689;
+    --ink: #2A2520;
+    --gold: #C8973A;
+  }
+
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; overflow-x: hidden; }
+
+  /* LOADING */
+  #loading {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh; gap: 1rem; color: var(--stone); font-size: 14px;
+  }
+  .spinner {
+    width: 32px; height: 32px; border: 2px solid var(--parchment);
+    border-top-color: var(--moss); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ERREUR */
+  #error {
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh; gap: 1rem; padding: 2rem; text-align: center;
+  }
+  #error h2 { font-family: 'Playfair Display', serif; color: var(--earth-dark); }
+  #error p { color: var(--stone); font-size: 14px; line-height: 1.6; }
+
+  /* PAGE */
+  #page { display: none; }
+
+  /* HERO */
+  .hero {
+    position: relative; height: 52vw; max-height: 420px; min-height: 260px;
+    overflow: hidden; background: var(--earth-dark);
+  }
+  .hero-bg { width: 100%; height: 100%; object-fit: cover; opacity: 0.75; display: block; }
+  .hero-gradient {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 30%, rgba(42,37,32,0.85) 100%);
+  }
+  .hero-badge {
+    position: absolute; top: 1.2rem; left: 1.2rem;
+    background: var(--moss); color: #fff; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 12px;
+    border-radius: 20px; display: flex; align-items: center; gap: 6px;
+  }
+  .hero-badge::before {
+    content: ''; width: 6px; height: 6px; background: #7DC67A;
+    border-radius: 50%; animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+  .hero-content { position: absolute; bottom: 1.5rem; left: 1.5rem; right: 1.5rem; }
+  .hero-eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.4rem; font-weight: 500; }
+  .hero-title { font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 5vw, 2.2rem); color: #fff; line-height: 1.15; margin-bottom: 0.4rem; }
+  .hero-meta { display: flex; gap: 1rem; font-size: 12px; color: rgba(255,255,255,0.7); align-items: center; flex-wrap: wrap; }
+  .hero-meta span { display: flex; align-items: center; gap: 4px; }
+
+  /* WAYPOINTS */
+  .waypoints {
+    background: var(--ink); padding: 0.75rem 1.5rem;
+    display: flex; align-items: center; overflow-x: auto; scrollbar-width: none;
+  }
+  .waypoints::-webkit-scrollbar { display: none; }
+  .wp { display: flex; align-items: center; flex-shrink: 0; }
+  .wp-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 500;
+    cursor: pointer; transition: all 0.2s; flex-shrink: 0; text-decoration: none;
+  }
+  .wp-dot.active { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+  .wp-dot.visited { background: rgba(74,103,65,0.5); border-color: var(--moss-light); color: rgba(255,255,255,0.8); }
+  .wp-line { width: 24px; height: 1.5px; background: rgba(255,255,255,0.15); flex-shrink: 0; }
+
+  /* MAIN */
+  .main { padding: 1.5rem; max-width: 680px; margin: 0 auto; }
+
+  /* DESCRIPTION */
+  .description { margin-bottom: 2rem; }
+  .description p { font-size: 15px; line-height: 1.75; color: #3D3830; }
+  .pull-quote {
+    border-left: 3px solid var(--gold); margin: 1.2rem 0; padding: 0.6rem 1rem;
+    font-family: 'Playfair Display', serif; font-style: italic; font-size: 16px;
+    color: var(--earth-dark); background: rgba(200,151,58,0.06); border-radius: 0 6px 6px 0;
+  }
+
+  .section-label {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--stone); margin-bottom: 0.9rem; display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--parchment); }
+
+  /* SLIDER */
+  .slider-section { margin-bottom: 2.5rem; }
+  .slider-wrap {
+    position: relative; border-radius: 10px; overflow: hidden;
+    cursor: ew-resize; user-select: none; height: 220px; background: var(--parchment);
+  }
+  .slider-after, .slider-before {
+    position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .slider-after { background: linear-gradient(135deg, #4A6741 0%, #2E4228 100%); }
+  .slider-before {
+    background: linear-gradient(135deg, #8B6F47 0%, #5C4730 100%);
+    clip-path: inset(0 50% 0 0);
+  }
+  .slider-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 1rem; text-align: center; }
+  .slider-icon { font-size: 36px; opacity: 0.9; }
+  .slider-text { font-size: 13px; color: #fff; opacity: 0.9; line-height: 1.4; }
+  .slider-label-after { position: absolute; bottom: 10px; right: 12px; font-size: 11px; background: rgba(0,0,0,0.4); color: #fff; padding: 3px 8px; border-radius: 4px; pointer-events: none; }
+  .slider-label-before { position: absolute; bottom: 10px; left: 12px; font-size: 11px; background: rgba(0,0,0,0.4); color: #fff; padding: 3px 8px; border-radius: 4px; z-index: 10; pointer-events: none; }
+  .slider-handle { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 3px; background: #fff; z-index: 20; pointer-events: none; }
+  .slider-handle::before {
+    content: '◀ ▶'; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%); background: #fff; color: var(--ink);
+    font-size: 9px; padding: 5px 8px; border-radius: 20px; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); letter-spacing: 0.05em;
+  }
+
+  /* AUDIO */
+  .audio-section { margin-bottom: 2.5rem; }
+  .audio-card { background: var(--ink); border-radius: 12px; padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: 1rem; }
+  .audio-header { display: flex; gap: 1rem; align-items: flex-start; }
+  .audio-thumb { width: 52px; height: 52px; border-radius: 8px; background: var(--earth); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .audio-meta { flex: 1; }
+  .audio-title { font-size: 14px; font-weight: 500; color: #fff; margin-bottom: 3px; }
+  .audio-subtitle { font-size: 12px; color: rgba(255,255,255,0.45); }
+  .audio-duration { font-size: 12px; color: var(--gold); font-variant-numeric: tabular-nums; flex-shrink: 0; margin-top: 2px; }
+  .audio-progress { display: flex; align-items: center; gap: 10px; }
+  .progress-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.12); border-radius: 2px; position: relative; cursor: pointer; }
+  .progress-fill { height: 100%; background: var(--gold); border-radius: 2px; width: 0%; transition: width 0.5s linear; }
+  .time-label { font-size: 11px; color: rgba(255,255,255,0.35); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .audio-controls { display: flex; align-items: center; justify-content: center; gap: 1.5rem; }
+  .ctrl-btn { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 20px; cursor: pointer; padding: 4px; transition: color 0.2s; display: flex; align-items: center; justify-content: center; }
+  .ctrl-btn:hover { color: #fff; }
+  .ctrl-btn.play { width: 48px; height: 48px; background: var(--gold); border-radius: 50%; color: var(--ink); font-size: 18px; }
+  .ctrl-btn.play:hover { background: #D9A84A; }
+
+  /* VIDEO */
+  .video-section { margin-bottom: 2.5rem; }
+  .video-card { border-radius: 10px; overflow: hidden; background: var(--ink); position: relative; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .video-thumb { position: absolute; inset: 0; background: linear-gradient(135deg, #3A5A35 0%, #1E3A19 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+  .video-play-btn { width: 56px; height: 56px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; border: 2px solid rgba(255,255,255,0.3); transition: all 0.2s; }
+  .video-card:hover .video-play-btn { background: var(--gold); border-color: var(--gold); color: var(--ink); transform: scale(1.08); }
+  .video-title-text { font-size: 13px; color: rgba(255,255,255,0.7); text-align: center; padding: 0 1rem; }
+  .video-duration-badge { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 4px; }
+
+  /* AR */
+  .ar-section { margin-bottom: 2.5rem; }
+  .ar-card { border: 1.5px dashed rgba(106,143,98,0.5); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.9rem; text-align: center; background: rgba(74,103,65,0.04); cursor: pointer; transition: all 0.2s; }
+  .ar-card:hover { background: rgba(74,103,65,0.08); border-color: var(--moss-light); }
+  .ar-icon { width: 56px; height: 56px; background: var(--moss); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .ar-title { font-size: 15px; font-weight: 500; color: var(--moss); }
+  .ar-desc { font-size: 13px; color: var(--stone); line-height: 1.6; }
+  .ar-btn { background: var(--moss); color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }
+  .ar-btn:hover { background: var(--earth-dark); }
+
+  /* AR MODAL */
+  .ar-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 100; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
+  .ar-modal.open { display: flex; }
+  .ar-viewfinder { width: 85vw; max-width: 340px; aspect-ratio: 3/4; border: 2px solid var(--moss-light); border-radius: 16px; position: relative; overflow: hidden; background: #0A1A08; }
+  .ar-corner { position: absolute; width: 20px; height: 20px; border-color: var(--gold); border-style: solid; border-width: 0; }
+  .ar-corner.tl { top:10px;left:10px;border-top-width:2.5px;border-left-width:2.5px;border-radius:4px 0 0 0; }
+  .ar-corner.tr { top:10px;right:10px;border-top-width:2.5px;border-right-width:2.5px;border-radius:0 4px 0 0; }
+  .ar-corner.bl { bottom:10px;left:10px;border-bottom-width:2.5px;border-left-width:2.5px;border-radius:0 0 0 4px; }
+  .ar-corner.br { bottom:10px;right:10px;border-bottom-width:2.5px;border-right-width:2.5px;border-radius:0 0 4px 0; }
+  .ar-scan-line { position: absolute; left:0;right:0;height:2px;background:linear-gradient(to right,transparent,var(--gold),transparent);animation:scan 2.5s ease-in-out infinite; }
+  @keyframes scan { 0%{top:10%} 50%{top:80%} 100%{top:10%} }
+  .ar-overlay-content { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;animation:arReveal 1s ease 1.5s forwards; }
+  @keyframes arReveal { to{opacity:1} }
+  .ar-ghost-image { width:80%;border-radius:8px;background:linear-gradient(160deg,rgba(140,110,70,0.5)0%,rgba(90,65,40,0.5)100%);border:1px solid rgba(200,151,58,0.4);aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(255,255,255,0.7);text-align:center;padding:0.5rem;line-height:1.4; }
+  .ar-modal-label { font-size:13px;color:rgba(255,255,255,0.6);text-align:center;padding:0 2rem; }
+  .ar-close { background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif; }
+
+  /* INFOS */
+  .infos-section { margin-bottom: 2.5rem; }
+  .infos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .info-card { background: #fff; border: 1px solid var(--parchment); border-radius: 10px; padding: 0.9rem 1rem; display: flex; align-items: flex-start; gap: 10px; }
+  .info-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .info-label { font-size: 11px; color: var(--stone); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+  .info-value { font-size: 13px; font-weight: 500; color: var(--ink); line-height: 1.3; }
+
+  /* BOTTOM NAV */
+  .bottom-nav { background: #fff; border-top: 1px solid var(--parchment); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; bottom: 0; }
+  .nav-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--stone); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; padding: 6px 0; transition: color 0.2s; text-decoration: none; }
+  .nav-btn:hover { color: var(--ink); }
+  .nav-btn.primary { background: var(--moss); color: #fff; padding: 9px 18px; border-radius: 8px; }
+  .nav-btn.primary:hover { background: var(--earth-dark); }
+  .nav-btn:disabled, .nav-btn.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+
+  /* MINI CARTE */
+  .map-section { margin-bottom: 2.5rem; }
+  .mini-map { height: 200px; border-radius: 10px; overflow: hidden; border: 1px solid var(--parchment); }
+  .map-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .map-link { font-size: 12px; color: var(--moss); text-decoration: none; font-weight: 500; }
+  .map-link:hover { text-decoration: underline; }
+  .map-gps-status { font-size: 11px; color: var(--stone); display: flex; align-items: center; gap: 5px; }
+  .gps-dot { width: 6px; height: 6px; border-radius: 50%; background: #aaa; }
+  .gps-dot.active { background: #7DC67A; animation: gpsPulse 2s ease-in-out infinite; }
+  @keyframes gpsPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* BANNIERE PROXIMITE */
+  .prox-banner {
+    display: none; background: var(--moss); color: #fff;
+    padding: 0.75rem 1.2rem; text-align: center; font-size: 13px;
+    align-items: center; justify-content: center; gap: 8px;
+    animation: slideDown 0.4s ease;
+  }
+  .prox-banner.show { display: flex; }
+  @keyframes slideDown { from{transform:translateY(-100%);opacity:0} to{transform:translateY(0);opacity:1} }
+
+
+  .fade-up { opacity: 0; transform: translateY(16px); animation: fadeUp 0.5s ease forwards; }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+  .fade-up:nth-child(1){animation-delay:0.05s}
+  .fade-up:nth-child(2){animation-delay:0.12s}
+  .fade-up:nth-child(3){animation-delay:0.19s}
+  .fade-up:nth-child(4){animation-delay:0.26s}
+  .fade-up:nth-child(5){animation-delay:0.33s}
+  .fade-up:nth-child(6){animation-delay:0.40s}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <span>Chargement du lieu…</span>
+</div>
+
+<!-- ERREUR -->
+<div id="error">
+  <div style="font-size:48px">🗺️</div>
+  <h2>Lieu introuvable</h2>
+  <p id="error-msg">Ce point du sentier n'existe pas ou l'URL est incorrecte.</p>
+  <a href="?lieu=01" style="margin-top:1rem;background:var(--moss);color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:14px">Aller au point 1</a>
+</div>
+
+<!-- BANNIERE PROXIMITE -->
+<div class="prox-banner" id="proxBanner">
+  <span>📍</span>
+  <span id="proxText">Vous êtes proche de ce lieu</span>
+</div>
+
+<!-- PAGE -->
+<div id="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <svg id="hero-svg" class="hero-bg" viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg">
+      <!-- Généré dynamiquement -->
+    </svg>
+    <div class="hero-gradient"></div>
+    <div class="hero-badge" id="hero-badge">Point ? / ?</div>
+    <div class="hero-content">
+      <div class="hero-eyebrow" id="hero-eyebrow"></div>
+      <h1 class="hero-title" id="hero-title"></h1>
+      <div class="hero-meta" id="hero-meta"></div>
+    </div>
+  </div>
+
+  <!-- WAYPOINTS -->
+  <nav class="waypoints" id="waypoints" aria-label="Étapes du sentier"></nav>
+
+  <!-- CONTENU -->
+  <main class="main">
+
+    <section class="description fade-up">
+      <p id="desc-text"></p>
+      <blockquote class="pull-quote" id="desc-citation"></blockquote>
+    </section>
+
+    <section class="slider-section fade-up">
+      <div class="section-label">Comparaison avant / après</div>
+      <div class="slider-wrap" id="slider" role="img" aria-label="Comparaison visuelle">
+        <div class="slider-after">
+          <div class="slider-inner">
+            <div class="slider-icon">🌿</div>
+            <div class="slider-text">Aujourd'hui<br><small style="opacity:.7">2024</small></div>
+          </div>
+        </div>
+        <div class="slider-before" id="sliderBefore">
+          <div class="slider-inner">
+            <div class="slider-icon">📷</div>
+            <div class="slider-text">Archives<br><small style="opacity:.7">Photo originale</small></div>
+          </div>
+          <div class="slider-label-before">Archives</div>
+        </div>
+        <div class="slider-label-after">Aujourd'hui</div>
+        <div class="slider-handle" id="sliderHandle"></div>
+      </div>
+      <p style="font-size:12px;color:var(--stone);margin-top:8px;text-align:center">← Glisser pour comparer →</p>
+    </section>
+
+    <section class="audio-section fade-up">
+      <div class="section-label">Commentaire audio</div>
+      <div class="audio-card">
+        <div class="audio-header">
+          <div class="audio-thumb">🎙️</div>
+          <div class="audio-meta">
+            <div class="audio-title" id="audio-title"></div>
+            <div class="audio-subtitle" id="audio-auteur"></div>
+          </div>
+          <div class="audio-duration" id="audio-dur"></div>
+        </div>
+        <div class="audio-progress">
+          <span class="time-label" id="timeCur">0:00</span>
+          <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <span class="time-label" id="timeTotal"></span>
+        </div>
+        <div class="audio-controls">
+          <button class="ctrl-btn" id="btnBack" aria-label="Reculer 10s">⏮</button>
+          <button class="ctrl-btn play" id="btnPlay" aria-label="Lecture">▶</button>
+          <button class="ctrl-btn" id="btnFwd" aria-label="Avancer 10s">⏭</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="video-section fade-up">
+      <div class="section-label">Vidéo courte</div>
+      <div class="video-card" id="videoCard" role="button">
+        <div class="video-thumb">
+          <div class="video-play-btn">▶</div>
+          <div class="video-title-text" id="video-titre"></div>
+        </div>
+        <div class="video-duration-badge" id="video-duree"></div>
+      </div>
+    </section>
+
+    <section class="ar-section fade-up">
+      <div class="section-label">Réalité augmentée</div>
+      <div class="ar-card">
+        <div class="ar-icon">📱</div>
+        <div class="ar-title" id="ar-titre"></div>
+        <div class="ar-desc" id="ar-desc"></div>
+        <button class="ar-btn" id="btnAR">
+          <span>Activer la caméra AR</span>
+          <span style="font-size:16px">⟶</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="map-section fade-up">
+      <div class="section-label">Localisation</div>
+      <div class="mini-map" id="miniMap"></div>
+      <div class="map-footer">
+        <a href="carte.html" class="map-link">↗ Voir la carte complète du sentier</a>
+        <div class="map-gps-status">
+          <div class="gps-dot" id="miniGpsDot"></div>
+          <span id="miniGpsLabel">GPS off</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="infos-section fade-up">
+      <div class="section-label">Infos pratiques</div>
+      <div class="infos-grid" id="infos-grid"></div>
+    </section>
+
+  </main>
+
+  <!-- NAVIGATION BAS -->
+  <nav class="bottom-nav" aria-label="Navigation entre étapes">
+    <a class="nav-btn" id="btnPrev">← Point précédent</a>
+    <a class="nav-btn primary" id="btnNext">Point suivant →</a>
+  </nav>
+
+</div>
+
+<!-- AR MODAL -->
+<div class="ar-modal" id="arModal" role="dialog" aria-modal="true">
+  <div class="ar-viewfinder">
+    <div class="ar-corner tl"></div><div class="ar-corner tr"></div>
+    <div class="ar-corner bl"></div><div class="ar-corner br"></div>
+    <div class="ar-scan-line"></div>
+    <div class="ar-overlay-content">
+      <div class="ar-ghost-image" id="ar-ghost-text"></div>
+    </div>
+  </div>
+  <p class="ar-modal-label" id="ar-modal-label"></p>
+  <button class="ar-close" id="btnARClose">Fermer la caméra</button>
+</div>
+
+<script>
+// =============================================
+// CONFIGURATION — modifier uniquement ces URLs
+// =============================================
+const DATA_URL = 'data.json'; // chemin vers ton fichier JSON
+
+// =============================================
+// CHARGEMENT ET RENDU
+// =============================================
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const lieuId = params.get('lieu') || '01';
+
+  try {
+    const res = await fetch(DATA_URL);
+    if (!res.ok) throw new Error('Fichier data.json introuvable');
+    const data = await res.json();
+
+    const lieu = data.lieux.find(l => l.id === lieuId);
+    if (!lieu) throw new Error(`Lieu "${lieuId}" non trouvé dans data.json`);
+
+    render(lieu, data);
+  } catch (err) {
+    document.getElementById('loading').style.display = 'none';
+    const errorEl = document.getElementById('error');
+    errorEl.style.display = 'flex';
+    document.getElementById('error-msg').textContent = err.message;
+  }
+}
+
+function render(lieu, data) {
+  const total = data.sentier.total_lieux;
+  const idx = data.lieux.findIndex(l => l.id === lieu.id);
+  const prev = data.lieux[idx - 1] || null;
+  const next = data.lieux[idx + 1] || null;
+
+  // HERO
+  document.title = lieu.titre + ' — ' + data.sentier.nom;
+  renderHeroSVG(lieu);
+  document.getElementById('hero-badge').textContent = `Point ${parseInt(lieu.id)} / ${total}`;
+  document.getElementById('hero-eyebrow').textContent = data.sentier.nom + ' · ' + data.sentier.sous_titre;
+  document.getElementById('hero-title').textContent = lieu.titre;
+  document.getElementById('hero-meta').innerHTML =
+    `<span>📍 Alt. ${lieu.altitude}</span><span>·</span><span>⏱ ${lieu.duree_depuis_depart}</span><span>·</span><span>${lieu.periode}</span>`;
+
+  // WAYPOINTS
+  const wpNav = document.getElementById('waypoints');
+  wpNav.innerHTML = data.lieux.map((l, i) => {
+    const isActive = l.id === lieu.id;
+    const dot = `<a href="?lieu=${l.id}" class="wp-dot${isActive ? ' active' : ''}" aria-label="Point ${parseInt(l.id)}">${parseInt(l.id)}</a>`;
+    const line = i < data.lieux.length - 1 ? '<div class="wp-line"></div>' : '';
+    return `<div class="wp">${dot}${line}</div>`;
+  }).join('');
+
+  // DESCRIPTION
+  document.getElementById('desc-text').textContent = lieu.description;
+  document.getElementById('desc-citation').textContent = lieu.citation;
+
+  // AUDIO
+  document.getElementById('audio-title').textContent = lieu.audio.titre;
+  document.getElementById('audio-auteur').textContent = lieu.audio.auteur;
+  document.getElementById('audio-dur').textContent = lieu.audio.duree;
+  document.getElementById('timeTotal').textContent = lieu.audio.duree;
+  setupAudio(lieu.audio.duree_sec);
+
+  // VIDEO
+  document.getElementById('video-titre').textContent = lieu.video.titre;
+  document.getElementById('video-duree').textContent = lieu.video.duree;
+  document.getElementById('videoCard').onclick = () => {
+    // En production : ouvrir l'URL Vimeo ou injecter un iframe
+    alert('🎬 Vidéo : ' + lieu.video.titre + '\n\nURL : ' + lieu.video.url);
+  };
+
+  // AR
+  document.getElementById('ar-titre').textContent = lieu.ar.titre;
+  document.getElementById('ar-desc').textContent = lieu.ar.description;
+  document.getElementById('ar-ghost-text').textContent = lieu.ar.titre;
+  document.getElementById('ar-modal-label').textContent = lieu.ar.description;
+
+  // INFOS
+  const infosMap = [
+    { icon: '🕐', label: 'Visite libre', key: 'visite' },
+    { icon: '♿', label: 'Accessibilité', key: 'accessibilite' },
+    { icon: '🐕', label: 'Animaux', key: 'animaux' },
+    { icon: '📶', label: 'Réseau', key: 'reseau' }
+  ];
+  document.getElementById('infos-grid').innerHTML = infosMap.map(i =>
+    `<div class="info-card">
+      <div class="info-icon">${i.icon}</div>
+      <div>
+        <div class="info-label">${i.label}</div>
+        <div class="info-value">${lieu.infos[i.key]}</div>
+      </div>
+    </div>`
+  ).join('');
+
+  // NAVIGATION
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  if (prev) {
+    btnPrev.href = `?lieu=${prev.id}`;
+    btnPrev.textContent = `← ${prev.titre}`;
+  } else {
+    btnPrev.className += ' disabled';
+    btnPrev.textContent = '← Début du sentier';
+  }
+  if (next) {
+    btnNext.href = `?lieu=${next.id}`;
+    btnNext.textContent = `${next.titre} →`;
+  } else {
+    btnNext.className += ' disabled';
+    btnNext.textContent = 'Fin du sentier';
+  }
+
+  // AR MODAL
+  document.getElementById('btnAR').onclick = () => {
+    document.getElementById('arModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  document.getElementById('btnARClose').onclick = () => {
+    document.getElementById('arModal').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  // MINI CARTE
+  setTimeout(() => initMiniMap(lieu, data.lieux), 150);
+
+  // AFFICHER LA PAGE
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('page').style.display = 'block';
+
+  // SLIDER
+  setTimeout(() => {
+    initSlider();
+  }, 100);
+}
+
+// =============================================
+// SLIDER
+// =============================================
+function initSlider() {
+  const slider = document.getElementById('slider');
+  const sliderBefore = document.getElementById('sliderBefore');
+  let isDragging = false;
+
+  function setPos(x) {
+    const rect = slider.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(100, ((x - rect.left) / rect.width) * 100));
+    sliderBefore.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+    document.getElementById('sliderHandle').style.left = pct + '%';
+  }
+
+  setPos(slider.getBoundingClientRect().left + slider.offsetWidth * 0.5);
+
+  slider.addEventListener('mousedown', e => { isDragging = true; setPos(e.clientX); });
+  slider.addEventListener('touchstart', e => { isDragging = true; setPos(e.touches[0].clientX); }, {passive:true});
+  document.addEventListener('mousemove', e => { if (isDragging) setPos(e.clientX); });
+  document.addEventListener('touchmove', e => { if (isDragging) setPos(e.touches[0].clientX); }, {passive:true});
+  document.addEventListener('mouseup', () => isDragging = false);
+  document.addEventListener('touchend', () => isDragging = false);
+}
+
+// =============================================
+// AUDIO PLAYER
+// =============================================
+function setupAudio(totalSec) {
+  let currentSec = 0, playing = false, interval = null;
+
+  function fmt(s) { return Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2,'0'); }
+  function updateProgress() {
+    document.getElementById('progressFill').style.width = (currentSec / totalSec * 100) + '%';
+    document.getElementById('timeCur').textContent = fmt(currentSec);
+  }
+
+  document.getElementById('btnPlay').onclick = () => {
+    playing = !playing;
+    document.getElementById('btnPlay').textContent = playing ? '⏸' : '▶';
+    if (playing) {
+      interval = setInterval(() => {
+        currentSec = Math.min(totalSec, currentSec + 1);
+        updateProgress();
+        if (currentSec >= totalSec) { playing = false; document.getElementById('btnPlay').textContent = '▶'; clearInterval(interval); }
+      }, 1000);
+    } else { clearInterval(interval); }
+  };
+
+  document.getElementById('btnBack').onclick = () => { currentSec = Math.max(0, currentSec - 10); updateProgress(); };
+  document.getElementById('btnFwd').onclick = () => { currentSec = Math.min(totalSec, currentSec + 10); updateProgress(); };
+  document.getElementById('progressBar').onclick = e => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    currentSec = Math.round(((e.clientX - rect.left) / rect.width) * totalSec);
+    updateProgress();
+  };
+}
+
+// =============================================
+// HERO SVG (placeholder visuel par lieu)
+// =============================================
+function renderHeroSVG(lieu) {
+  const palettes = [
+    { bg:'#2E4228', c1:'#3A5530', c2:'#1E3218', stone:'#7A6040' },
+    { bg:'#1E3040', c1:'#2A4A60', c2:'#152535', stone:'#506070' },
+    { bg:'#3A2818', c1:'#5A3C28', c2:'#2A1A10', stone:'#806040' },
+    { bg:'#28283A', c1:'#3A3A5A', c2:'#181828', stone:'#605870' },
+  ];
+  const p = palettes[parseInt(lieu.id) % palettes.length];
+  const seed = parseInt(lieu.id) * 137;
+
+  document.getElementById('hero-svg').innerHTML = `
+    <rect width="800" height="420" fill="${p.bg}"/>
+    <ellipse cx="${600 + (seed%100)}" cy="${80 + (seed%60)}" rx="130" ry="110" fill="${p.c1}" opacity="0.7"/>
+    <rect x="0" y="300" width="800" height="120" fill="${p.c2}" opacity="0.8"/>
+    <rect x="${300 + (seed%80)}" y="150" width="80" height="150" fill="${p.stone}" rx="4"/>
+    <rect x="${320 + (seed%80)}" y="170" width="40" height="30" fill="${p.bg}" rx="2" opacity="0.7"/>
+    <polygon points="${290+(seed%80)},150 ${400+(seed%80)},150 ${345+(seed%80)},65" fill="${p.stone}" opacity="0.85"/>
+    <circle cx="${140+(seed%60)}" cy="${210+(seed%30)}" r="75" fill="${p.c1}" opacity="0.6"/>
+    <circle cx="${630+(seed%50)}" cy="${230+(seed%40)}" r="60" fill="${p.c1}" opacity="0.5"/>
+  `;
+}
+
+// =============================================
+// DÉMARRAGE
+// =============================================
+init();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// =============================================
+// MINI CARTE + GPS
+// =============================================
+let miniMap = null;
+let userMarkerMini = null;
+
+function initMiniMap(lieu, lieux) {
+  if (!lieu.gps) return;
+
+  miniMap = L.map('miniMap', {
+    center: [lieu.gps.lat, lieu.gps.lng],
+    zoom: 15,
+    zoomControl: false,
+    dragging: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    touchZoom: false
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 19
+  }).addTo(miniMap);
+
+  // Tracé du sentier
+  const coords = lieux.filter(l => l.gps).map(l => [l.gps.lat, l.gps.lng]);
+  L.polyline(coords, { color: '#4A6741', weight: 2.5, opacity: 0.6, dashArray: '5 4' }).addTo(miniMap);
+
+  // Tous les marqueurs petits
+  lieux.forEach(l => {
+    if (!l.gps) return;
+    const isCurrent = l.id === lieu.id;
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width:${isCurrent?'28px':'20px'};height:${isCurrent?'28px':'20px'};
+        border-radius:50%;background:${isCurrent?'#C8973A':'#4A6741'};
+        border:2px solid #fff;display:flex;align-items:center;justify-content:center;
+        font-size:${isCurrent?'11px':'9px'};font-weight:600;color:#fff;
+        box-shadow:0 2px 6px rgba(0,0,0,0.3);">${parseInt(l.id)}</div>`,
+      iconSize: isCurrent ? [28,28] : [20,20],
+      iconAnchor: isCurrent ? [14,14] : [10,10]
+    });
+    L.marker([l.gps.lat, l.gps.lng], { icon }).addTo(miniMap);
+  });
+
+  // GPS utilisateur
+  startMiniGPS(lieu);
+}
+
+function startMiniGPS(lieu) {
+  if (!('geolocation' in navigator)) return;
+  document.getElementById('miniGpsDot').classList.add('active');
+  document.getElementById('miniGpsLabel').textContent = 'Localisation…';
+
+  navigator.geolocation.watchPosition(pos => {
+    const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+    document.getElementById('miniGpsLabel').textContent = `±${Math.round(accuracy)} m`;
+
+    const latlng = [lat, lng];
+    if (!userMarkerMini) {
+      const icon = L.divIcon({
+        className: '',
+        html: '<div style="width:12px;height:12px;border-radius:50%;background:#4A90E2;border:2px solid #fff;box-shadow:0 0 0 3px rgba(74,144,226,0.3)"></div>',
+        iconSize: [12,12], iconAnchor: [6,6]
+      });
+      userMarkerMini = L.marker(latlng, { icon }).addTo(miniMap);
+    } else {
+      userMarkerMini.setLatLng(latlng);
+    }
+
+    // Vérifier proximité
+    if (lieu.gps) {
+      const dist = haversineM(lat, lng, lieu.gps.lat, lieu.gps.lng);
+      const rayon = lieu.rayon_declenchement || 50;
+      if (dist <= rayon) {
+        const banner = document.getElementById('proxBanner');
+        document.getElementById('proxText').textContent =
+          `Vous êtes à ${Math.round(dist)} m — contenu débloqué !`;
+        banner.classList.add('show');
+      }
+    }
+  },
+  () => {
+    document.getElementById('miniGpsLabel').textContent = 'GPS indisponible';
+    document.getElementById('miniGpsDot').classList.remove('active');
+  },
+  { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
+}
+
+function haversineM(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+</script>
+</body>

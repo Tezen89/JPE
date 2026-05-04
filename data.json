@@ -1,0 +1,115 @@
+{
+  "sentier": {
+    "nom": "Sentier du Patrimoine",
+    "sous_titre": "Vallée de la Sioule",
+    "total_lieux": 8,
+    "centre": { "lat": 45.9842, "lng": 3.1756 },
+    "zoom_defaut": 14,
+    "couleur_trace": "#4A6741",
+    "trace_gpx": "assets/trace.gpx"
+  },
+  "lieux": [
+    {
+      "id": "01",
+      "titre": "Chapelle Saint-Blaise",
+      "periode": "XIe siècle",
+      "altitude": "298 m",
+      "duree_depuis_depart": "Départ",
+      "gps": { "lat": 45.9780, "lng": 3.1690 },
+      "rayon_declenchement": 50,
+      "description": "Point de départ du sentier, cette chapelle romane marque l'entrée du bourg depuis le Moyen Âge. Son clocher en pierre volcanique est caractéristique de l'architecture auvergnate.",
+      "citation": "« Le chemin commence toujours là où quelqu'un s'est arrêté pour la première fois. »",
+      "audio": {
+        "titre": "L'histoire de la chapelle",
+        "auteur": "Marie Dupont · Archéologue",
+        "duree": "2:15",
+        "duree_sec": 135,
+        "fichier": "assets/audio/lieu-01.mp3"
+      },
+      "video": {
+        "titre": "Visite intérieure de la chapelle",
+        "duree": "1:45",
+        "url": "https://vimeo.com/exemple-01"
+      },
+      "ar": {
+        "titre": "Voir la chapelle au Moyen Âge",
+        "description": "Pointez votre caméra vers le panneau pour voir une reconstitution de la chapelle au XIe siècle avec son porche d'origine."
+      },
+      "infos": {
+        "visite": "Toute l'année",
+        "accessibilite": "Accessible PMR",
+        "animaux": "Chiens admis en laisse",
+        "reseau": "4G bonne couverture"
+      },
+      "photo_description": "Chapelle romane en pierre grise"
+    },
+    {
+      "id": "02",
+      "titre": "Gué de la Ribeyre",
+      "periode": "Époque médiévale",
+      "altitude": "312 m",
+      "duree_depuis_depart": "~8 min depuis le départ",
+      "gps": { "lat": 45.9810, "lng": 3.1715 },
+      "rayon_declenchement": 40,
+      "description": "Ce gué permettait aux pèlerins se rendant à Compostelle de traverser la rivière. Les pierres plates visibles sous l'eau sont les vestiges du dallage médiéval d'origine.",
+      "citation": "« L'eau ici a porté plus de voyageurs que toutes les routes du pays. »",
+      "audio": {
+        "titre": "Les pèlerins de Compostelle",
+        "auteur": "Henri Lacombe · Guide culturel",
+        "duree": "3:10",
+        "duree_sec": 190,
+        "fichier": "assets/audio/lieu-02.mp3"
+      },
+      "video": {
+        "titre": "La faune aquatique de la Ribeyre",
+        "duree": "2:05",
+        "url": "https://vimeo.com/exemple-02"
+      },
+      "ar": {
+        "titre": "Voir un groupe de pèlerins traverser",
+        "description": "Pointez votre caméra vers le marqueur au bord de l'eau pour voir une reconstitution animée de pèlerins traversant le gué."
+      },
+      "infos": {
+        "visite": "Toute l'année",
+        "accessibilite": "Chemin non accessible PMR",
+        "animaux": "Chiens admis en laisse",
+        "reseau": "3G partielle"
+      },
+      "photo_description": "Gué avec pierres plates dans la rivière"
+    },
+    {
+      "id": "03",
+      "titre": "Moulin de Rochefort",
+      "periode": "XIIe siècle",
+      "altitude": "342 m",
+      "duree_depuis_depart": "~15 min depuis le départ",
+      "gps": { "lat": 45.9842, "lng": 3.1756 },
+      "rayon_declenchement": 60,
+      "description": "Construit au XIIe siècle par les moines de l'abbaye de Mozac, ce moulin à eau alimentait toute la vallée en farine jusqu'à la Révolution. Ses mécanismes d'origine en bois de châtaignier sont partiellement conservés.",
+      "citation": "« Là où grondait la meule, le silence du temps a repris ses droits. »",
+      "audio": {
+        "titre": "Histoire du Moulin de Rochefort",
+        "auteur": "Jean-Pierre Morel · Historien local",
+        "duree": "3:42",
+        "duree_sec": 222,
+        "fichier": "assets/audio/lieu-03.mp3"
+      },
+      "video": {
+        "titre": "La restauration du mécanisme à eau",
+        "duree": "2:18",
+        "url": "https://vimeo.com/exemple-03"
+      },
+      "ar": {
+        "titre": "Voir le moulin en 1850",
+        "description": "Pointez votre caméra vers le panneau du sentier pour superposer une reconstitution historique du moulin en activité."
+      },
+      "infos": {
+        "visite": "Toute l'année",
+        "accessibilite": "Chemin non accessible PMR",
+        "animaux": "Chiens admis en laisse",
+        "reseau": "4G partielle (Orange)"
+      },
+      "photo_description": "Moulin en pierre au bord d'un ruisseau"
+    }
+  ]
+}

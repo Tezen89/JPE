@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carte du Sentier</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #F5F0E8; --parchment: #EDE5D0; --earth: #8B6F47;
+    --earth-dark: #5C4730; --moss: #4A6741; --moss-light: #6B8F62;
+    --stone: #9E9689; --ink: #2A2520; --gold: #C8973A;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* HEADER */
+  .header {
+    background: var(--ink); padding: 0.9rem 1.2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0; z-index: 10;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 2px; }
+  .header-title { font-family: 'Playfair Display', serif; font-size: 17px; color: #fff; }
+  .header-sub { font-size: 11px; color: rgba(255,255,255,0.45); letter-spacing: 0.06em; }
+  .header-badge {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px; padding: 4px 12px; font-size: 11px; color: rgba(255,255,255,0.6);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .gps-dot { width: 6px; height: 6px; border-radius: 50%; background: #aaa; flex-shrink: 0; transition: background 0.3s; }
+  .gps-dot.active { background: #7DC67A; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+
+  /* CARTE */
+  #map { flex: 1; z-index: 1; }
+
+  /* DRAWER BAS */
+  .drawer {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+    background: #fff; border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+    transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+    transform: translateY(calc(100% - 72px));
+    max-height: 70dvh;
+    display: flex; flex-direction: column;
+  }
+  .drawer.open { transform: translateY(0); }
+
+  .drawer-handle-wrap {
+    padding: 12px 0 6px; display: flex; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .drawer-handle { width: 36px; height: 4px; background: var(--parchment); border-radius: 2px; }
+
+  .drawer-header {
+    padding: 0 1.2rem 0.9rem; display: flex; align-items: center;
+    justify-content: space-between; flex-shrink: 0;
+  }
+  .drawer-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .drawer-count { font-size: 12px; color: var(--stone); }
+
+  .drawer-list { overflow-y: auto; flex: 1; padding: 0 1.2rem 1.5rem; }
+
+  .lieu-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0.75rem 0; border-bottom: 1px solid var(--parchment);
+    cursor: pointer; text-decoration: none; color: var(--ink);
+    transition: opacity 0.2s;
+  }
+  .lieu-item:last-child { border-bottom: none; }
+  .lieu-item:hover { opacity: 0.75; }
+
+  .lieu-num {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    background: var(--moss); color: #fff; display: flex;
+    align-items: center; justify-content: center; font-size: 12px; font-weight: 500;
+  }
+  .lieu-num.nearby { background: var(--gold); color: var(--ink); }
+
+  .lieu-info { flex: 1; }
+  .lieu-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .lieu-meta { font-size: 12px; color: var(--stone); }
+
+  .lieu-dist {
+    font-size: 12px; font-weight: 500; color: var(--moss);
+    background: rgba(74,103,65,0.08); padding: 3px 8px;
+    border-radius: 12px; white-space: nowrap; flex-shrink: 0;
+  }
+  .lieu-dist.far { color: var(--stone); background: var(--parchment); }
+
+  /* NOTIFICATION PROXIMITE */
+  .notif {
+    position: absolute; top: 70px; left: 1rem; right: 1rem; z-index: 30;
+    background: var(--ink); color: #fff; border-radius: 12px;
+    padding: 0.9rem 1rem; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    transform: translateY(-20px); opacity: 0;
+    transition: all 0.4s cubic-bezier(.4,0,.2,1);
+    pointer-events: none;
+  }
+  .notif.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .notif-icon { font-size: 22px; flex-shrink: 0; }
+  .notif-text { flex: 1; }
+  .notif-titre { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .notif-sub { font-size: 11px; color: rgba(255,255,255,0.55); }
+  .notif-btn {
+    background: var(--gold); color: var(--ink); border: none;
+    padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* MARKER CUSTOM */
+  .marker-pin {
+    width: 32px; height: 32px; border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg); display: flex; align-items: center;
+    justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .marker-pin span { transform: rotate(45deg); font-size: 11px; font-weight: 600; }
+  .marker-visited { background: var(--moss-light); border: 2px solid #fff; }
+  .marker-current { background: var(--gold); border: 2px solid #fff; }
+  .marker-future { background: rgba(74,103,65,0.5); border: 2px solid rgba(255,255,255,0.6); }
+
+  .user-marker {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #4A90E2; border: 3px solid #fff;
+    box-shadow: 0 0 0 4px rgba(74,144,226,0.25);
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="header-title">Sentier du Patrimoine</div>
+    <div class="header-sub">Vallée de la Sioule</div>
+  </div>
+  <div class="header-badge">
+    <div class="gps-dot" id="gpsDot"></div>
+    <span id="gpsLabel">GPS off</span>
+  </div>
+</header>
+
+<div id="map"></div>
+
+<!-- NOTIFICATION PROXIMITE -->
+<div class="notif" id="notif">
+  <div class="notif-icon">📍</div>
+  <div class="notif-text">
+    <div class="notif-titre" id="notif-titre">Vous approchez d'un lieu</div>
+    <div class="notif-sub" id="notif-sub"></div>
+  </div>
+  <button class="notif-btn" id="notif-btn">Voir →</button>
+</div>
+
+<!-- DRAWER LISTE -->
+<div class="drawer" id="drawer">
+  <div class="drawer-handle-wrap" id="drawerToggle">
+    <div class="drawer-handle"></div>
+  </div>
+  <div class="drawer-header">
+    <div class="drawer-title">Points du sentier</div>
+    <div class="drawer-count" id="drawerCount"></div>
+  </div>
+  <div class="drawer-list" id="drawerList"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const DATA_URL = 'data.json';
+let map, userMarker, userCircle, lieux = [], sentier = {};
+let drawerOpen = false;
+let notifTimeout = null;
+let lastNotifiedId = null;
+
+// ---- INIT ----
+async function init() {
+  const res = await fetch(DATA_URL);
+  const data = await res.json();
+  lieux = data.lieux;
+  sentier = data.sentier;
+
+  // Carte Leaflet
+  map = L.map('map', {
+    center: [sentier.centre.lat, sentier.centre.lng],
+    zoom: sentier.zoom_defaut,
+    zoomControl: false
+  });
+
+  // Fond de carte OpenStreetMap (gratuit)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 19
+  }).addTo(map);
+
+  // Zoom en haut à droite
+  L.control.zoom({ position: 'topright' }).addTo(map);
+
+  // Marqueurs des lieux
+  lieux.forEach(lieu => {
+    if (!lieu.gps) return;
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="marker-pin marker-future"><span style="color:#fff">${parseInt(lieu.id)}</span></div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -36]
+    });
+
+    const marker = L.marker([lieu.gps.lat, lieu.gps.lng], { icon })
+      .addTo(map)
+      .bindPopup(buildPopup(lieu), { maxWidth: 260 });
+
+    lieu._marker = marker;
+
+    marker.on('click', () => {
+      map.setView([lieu.gps.lat, lieu.gps.lng], 16, { animate: true });
+    });
+  });
+
+  // Tracé du sentier (ligne entre les points)
+  const coords = lieux.filter(l => l.gps).map(l => [l.gps.lat, l.gps.lng]);
+  L.polyline(coords, {
+    color: sentier.couleur_trace || '#4A6741',
+    weight: 3,
+    opacity: 0.7,
+    dashArray: '6 4'
+  }).addTo(map);
+
+  // Drawer liste
+  renderDrawer();
+
+  // GPS
+  startGPS();
+}
+
+// ---- POPUP ----
+function buildPopup(lieu) {
+  return `
+    <div style="font-family:'DM Sans',sans-serif;min-width:200px">
+      <div style="font-size:11px;color:#9E9689;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Point ${parseInt(lieu.id)}</div>
+      <div style="font-size:15px;font-weight:500;margin-bottom:4px">${lieu.titre}</div>
+      <div style="font-size:12px;color:#666;margin-bottom:10px">${lieu.periode} · Alt. ${lieu.altitude}</div>
+      <a href="index.html?lieu=${lieu.id}" style="display:inline-block;background:#4A6741;color:#fff;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;text-decoration:none">
+        Voir ce lieu →
+      </a>
+    </div>
+  `;
+}
+
+// ---- DRAWER ----
+function renderDrawer(distances) {
+  document.getElementById('drawerCount').textContent = `${lieux.length} points`;
+  document.getElementById('drawerList').innerHTML = lieux.map(lieu => {
+    const dist = distances && lieu.gps ? distances[lieu.id] : null;
+    const distLabel = dist !== null && dist !== undefined
+      ? (dist < 1000 ? `${Math.round(dist)} m` : `${(dist/1000).toFixed(1)} km`)
+      : lieu.duree_depuis_depart;
+    const isNearby = dist !== null && dist !== undefined && dist < (lieu.rayon_declenchement || 50) * 5;
+
+    return `<a class="lieu-item" href="index.html?lieu=${lieu.id}">
+      <div class="lieu-num${isNearby ? ' nearby' : ''}">${parseInt(lieu.id)}</div>
+      <div class="lieu-info">
+        <div class="lieu-name">${lieu.titre}</div>
+        <div class="lieu-meta">${lieu.periode} · ${lieu.altitude}</div>
+      </div>
+      <div class="lieu-dist${!isNearby ? ' far' : ''}">${distLabel}</div>
+    </a>`;
+  }).join('');
+}
+
+// ---- TOGGLE DRAWER ----
+document.getElementById('drawerToggle').addEventListener('click', () => {
+  drawerOpen = !drawerOpen;
+  document.getElementById('drawer').classList.toggle('open', drawerOpen);
+});
+
+// ---- GPS ----
+function startGPS() {
+  if (!('geolocation' in navigator)) return;
+
+  document.getElementById('gpsDot').classList.add('active');
+  document.getElementById('gpsLabel').textContent = 'Localisation…';
+
+  navigator.geolocation.watchPosition(
+    pos => onPosition(pos),
+    err => {
+      document.getElementById('gpsLabel').textContent = 'GPS indisponible';
+      document.getElementById('gpsDot').classList.remove('active');
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+  );
+}
+
+function onPosition(pos) {
+  const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+
+  document.getElementById('gpsLabel').textContent = `±${Math.round(accuracy)} m`;
+
+  // Marqueur utilisateur
+  const userLatLng = [lat, lng];
+  if (!userMarker) {
+    const icon = L.divIcon({
+      className: '', html: '<div class="user-marker"></div>',
+      iconSize: [16, 16], iconAnchor: [8, 8]
+    });
+    userMarker = L.marker(userLatLng, { icon }).addTo(map);
+    userCircle = L.circle(userLatLng, { radius: accuracy, color: '#4A90E2', weight: 1, fillOpacity: 0.08, fillColor: '#4A90E2' }).addTo(map);
+    map.setView(userLatLng, 15, { animate: true });
+  } else {
+    userMarker.setLatLng(userLatLng);
+    userCircle.setLatLng(userLatLng).setRadius(accuracy);
+  }
+
+  // Calcul distances
+  const distances = {};
+  lieux.forEach(lieu => {
+    if (!lieu.gps) return;
+    distances[lieu.id] = haversine(lat, lng, lieu.gps.lat, lieu.gps.lng);
+  });
+
+  renderDrawer(distances);
+  checkProximite(lat, lng, distances);
+}
+
+// ---- PROXIMITE ----
+function checkProximite(lat, lng, distances) {
+  for (const lieu of lieux) {
+    if (!lieu.gps) continue;
+    const dist = distances[lieu.id];
+    const rayon = lieu.rayon_declenchement || 50;
+
+    if (dist <= rayon && lieu.id !== lastNotifiedId) {
+      lastNotifiedId = lieu.id;
+      showNotif(lieu, dist);
+
+      // Mettre en évidence le marqueur
+      if (lieu._marker) {
+        lieu._marker.setIcon(L.divIcon({
+          className: '',
+          html: `<div class="marker-pin marker-current"><span style="color:var(--ink,#2A2520)">${parseInt(lieu.id)}</span></div>`,
+          iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -36]
+        }));
+        lieu._marker.openPopup();
+      }
+      break;
+    }
+  }
+}
+
+// ---- NOTIFICATION ----
+function showNotif(lieu, dist) {
+  const notif = document.getElementById('notif');
+  document.getElementById('notif-titre').textContent = lieu.titre;
+  document.getElementById('notif-sub').textContent = `À ${Math.round(dist)} m · ${lieu.periode}`;
+  document.getElementById('notif-btn').onclick = () => {
+    window.location.href = `index.html?lieu=${lieu.id}`;
+  };
+  notif.classList.add('show');
+  if (notifTimeout) clearTimeout(notifTimeout);
+  notifTimeout = setTimeout(() => notif.classList.remove('show'), 8000);
+}
+
+// ---- HAVERSINE (distance GPS en mètres) ----
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+init();
+</script>
+</body>
+</html>
