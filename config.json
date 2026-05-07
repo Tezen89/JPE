@@ -11,8 +11,16 @@
   "images": {
     "logo.png": "assets/images/logo.png",
     "lieu-01.jpg": "assets/images/lieu-01.jpg",
-    "lieu-01-archive.jpg": "assets/images/lieu-01-archive.jpg",
     "lieu-02.jpg": "assets/images/lieu-02.jpg",
-    "lieu-02-archive.jpg": "assets/images/lieu-02-archive.jpg"
+    "lieu-03.jpg": "assets/images/lieu-03.jpg",
+    "lieu-04.jpg": "assets/images/lieu-04.jpg"
+  },
+  "options": {
+    "afficher_slider": true,
+    "afficher_audio": true,
+    "afficher_video": true,
+    "afficher_ar": false,
+    "afficher_minimap": true,
+    "afficher_infos": true
   }
 }

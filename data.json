@@ -15,8 +15,6 @@
       "id": "01",
       "titre": "Ruines Vauluisant",
       "periode": "14ème siècle",
-      "altitude": "",
-      "duree_depuis_depart": "",
       "gps": {
         "lat": 47.768133,
         "lng": 3.482666
@@ -26,7 +24,6 @@
       "citation": "« Le chemin commence toujours là où quelqu'un s'est arrêté. »",
       "audio": {
         "titre": "",
-        "auteur": "",
         "duree": "",
         "duree_sec": 0,
         "fichier": ""
@@ -42,7 +39,7 @@
       },
       "infos": {
         "visite": "Toute l'année",
-        "accessibilite": "Accessible PMR",
+        "accessibilite": "Non accessible",
         "animaux": "Chiens admis en laisse",
         "reseau": "4G bonne couverture"
       },
@@ -55,8 +52,6 @@
       "id": "02",
       "titre": "Calvaire de St Charles Borromée",
       "periode": "15ème siècle",
-      "altitude": "",
-      "duree_depuis_depart": "",
       "gps": {
         "lat": 47.739545,
         "lng": 3.486091
@@ -66,7 +61,6 @@
       "citation": "",
       "audio": {
         "titre": "",
-        "auteur": "",
         "duree": "",
         "duree_sec": 0,
         "fichier": ""
@@ -95,8 +89,6 @@
       "id": "03",
       "titre": "Château de la Borde",
       "periode": "15ème siècle",
-      "altitude": "",
-      "duree_depuis_depart": "",
       "gps": {
         "lat": 47.735668,
         "lng": 3.492923
@@ -106,9 +98,8 @@
       "citation": "Un Chevannais prend Auxerre",
       "audio": {
         "titre": "Le Capitaine de La Borde",
-        "auteur": "",
-        "duree": "02:15:00",
-        "duree_sec": 0,
+        "duree": "2:15",
+        "duree_sec": 135,
         "fichier": "assets/audio/laborde.mp3"
       },
       "video": {
@@ -135,8 +126,6 @@
       "id": "04",
       "titre": "Fontaine Madame",
       "periode": "15ème siècle",
-      "altitude": "",
-      "duree_depuis_depart": "",
       "gps": {
         "lat": 47.754923,
         "lng": 3.482458
@@ -146,7 +135,6 @@
       "citation": "Bla bla bla",
       "audio": {
         "titre": "",
-        "auteur": "",
         "duree": "",
         "duree_sec": 0,
         "fichier": ""
@@ -169,7 +157,7 @@
       "photo_apres": "assets/images/fontaine.jpg",
       "photo_avant": "assets/images/fontaine_archive.jpg",
       "label_apres": "Aujourd'hui",
-      "label_avant": "1920.0"
+      "label_avant": "1920"
     }
   ]
 }
