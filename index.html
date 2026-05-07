@@ -275,8 +275,9 @@
 
   <!-- HERO -->
   <div class="hero">
+    <img id="hero-img" class="hero-bg" src="" alt="" style="display:none">
     <svg id="hero-svg" class="hero-bg" viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg">
-      <!-- Généré dynamiquement -->
+      <!-- Fallback généré dynamiquement -->
     </svg>
     <div class="hero-gradient"></div>
     <div class="hero-badge" id="hero-badge">Point ? / ?</div>
@@ -737,6 +738,33 @@ function setupAudio(fichier, dureeSecFallback) {
 // HERO SVG (placeholder visuel par lieu)
 // =============================================
 function renderHeroSVG(lieu) {
+  const img = document.getElementById('hero-img');
+  const svg = document.getElementById('hero-svg');
+
+  // Photo hero : photo_hero en priorité, sinon photo_apres, sinon SVG
+  const photoHero = lieu.photo_hero || lieu.photo_apres || '';
+
+  if (photoHero) {
+    // Afficher la vraie photo
+    img.src = photoHero;
+    img.alt = lieu.titre;
+    img.style.display = 'block';
+    svg.style.display = 'none';
+    // Si la photo ne charge pas → afficher le SVG de secours
+    img.onerror = () => {
+      img.style.display = 'none';
+      svg.style.display = 'block';
+      renderFallbackSVG(lieu, svg);
+    };
+  } else {
+    // Pas de photo → SVG généré
+    img.style.display = 'none';
+    svg.style.display = 'block';
+    renderFallbackSVG(lieu, svg);
+  }
+}
+
+function renderFallbackSVG(lieu, svg) {
   const palettes = [
     { bg:'#2E4228', c1:'#3A5530', c2:'#1E3218', stone:'#7A6040' },
     { bg:'#1E3040', c1:'#2A4A60', c2:'#152535', stone:'#506070' },
@@ -745,13 +773,12 @@ function renderHeroSVG(lieu) {
   ];
   const p = palettes[parseInt(lieu.id) % palettes.length];
   const seed = parseInt(lieu.id) * 137;
-
-  document.getElementById('hero-svg').innerHTML = `
+  svg.innerHTML = `
     <rect width="800" height="420" fill="${p.bg}"/>
-    <ellipse cx="${600 + (seed%100)}" cy="${80 + (seed%60)}" rx="130" ry="110" fill="${p.c1}" opacity="0.7"/>
+    <ellipse cx="${600+(seed%100)}" cy="${80+(seed%60)}" rx="130" ry="110" fill="${p.c1}" opacity="0.7"/>
     <rect x="0" y="300" width="800" height="120" fill="${p.c2}" opacity="0.8"/>
-    <rect x="${300 + (seed%80)}" y="150" width="80" height="150" fill="${p.stone}" rx="4"/>
-    <rect x="${320 + (seed%80)}" y="170" width="40" height="30" fill="${p.bg}" rx="2" opacity="0.7"/>
+    <rect x="${300+(seed%80)}" y="150" width="80" height="150" fill="${p.stone}" rx="4"/>
+    <rect x="${320+(seed%80)}" y="170" width="40" height="30" fill="${p.bg}" rx="2" opacity="0.7"/>
     <polygon points="${290+(seed%80)},150 ${400+(seed%80)},150 ${345+(seed%80)},65" fill="${p.stone}" opacity="0.85"/>
     <circle cx="${140+(seed%60)}" cy="${210+(seed%30)}" r="75" fill="${p.c1}" opacity="0.6"/>
     <circle cx="${630+(seed%50)}" cy="${230+(seed%40)}" r="60" fill="${p.c1}" opacity="0.5"/>

@@ -43,6 +43,7 @@
         "animaux": "Chiens admis en laisse",
         "reseau": "4G bonne couverture"
       },
+      "photo_hero": "assets/images/logo-hero.jpg",
       "photo_apres": "",
       "photo_avant": "",
       "label_apres": "",
@@ -80,6 +81,7 @@
         "animaux": "Chiens admis en laisse",
         "reseau": "4G bonne couverture"
       },
+      "photo_hero": "assets/images/logo-hero.jpg",
       "photo_apres": "",
       "photo_avant": "",
       "label_apres": "",
@@ -117,6 +119,7 @@
         "animaux": "Chiens admis en laisse",
         "reseau": "4G bonne couverture"
       },
+      "photo_hero": "assets/images/logo-hero.jpg",
       "photo_apres": "",
       "photo_avant": "",
       "label_apres": "",
@@ -154,6 +157,7 @@
         "animaux": "Chiens admis en laisse",
         "reseau": "4G bonne couverture"
       },
+      "photo_hero": "assets/images/logo-hero.jpg",
       "photo_apres": "assets/images/fontaine.jpg",
       "photo_avant": "assets/images/fontaine_archive.jpg",
       "label_apres": "Aujourd'hui",
