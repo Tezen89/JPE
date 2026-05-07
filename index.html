@@ -637,16 +637,6 @@ function render(lieu, data, config = {}) {
     btnNext.textContent = 'Fin du sentier';
   }
 
-  // AR MODAL
-  document.getElementById('btnAR').onclick = () => {
-    document.getElementById('arModal').classList.add('open');
-    document.body.style.overflow = 'hidden';
-  };
-  document.getElementById('btnARClose').onclick = () => {
-    document.getElementById('arModal').classList.remove('open');
-    document.body.style.overflow = '';
-  };
-
   // MINI CARTE
   setTimeout(() => initMiniMap(lieu, data.lieux), 150);
 
