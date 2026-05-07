@@ -605,23 +605,26 @@ function render(lieu, data, config = {}) {
   } else {
     document.getElementById('ar-titre').textContent = lieu.ar.titre;
     document.getElementById('ar-desc').textContent = lieu.ar.description || '';
-    document.getElementById('arModalTitre').textContent = lieu.ar.titre;
-    document.getElementById('arModalDesc').textContent = lieu.ar.description || '';
 
-    // Bouton ouverture modal
+    // Bouton ouverture modal (dans la page, toujours présent)
     document.getElementById('btnAR').onclick = () => {
       document.getElementById('arModal').classList.add('open');
       document.body.style.overflow = 'hidden';
+      // Remplir les textes au moment de l'ouverture
+      const t1 = document.getElementById('arModalTitre');
+      const t2 = document.getElementById('arModalDesc');
+      if (t1) t1.textContent = lieu.ar.titre;
+      if (t2) t2.textContent = lieu.ar.description || '';
     };
 
-    // Fermer depuis le choix
-    document.getElementById('btnARCloseChoix').onclick = fermerAR;
-    document.getElementById('btnARCloseScene').onclick  = fermerAR;
-
-    // Mode Marqueur
-    document.getElementById('btnARMarker').onclick = () => lancerAR('marker', lieu);
-    // Mode GPS
-    document.getElementById('btnARGPS').onclick = () => lancerAR('gps', lieu);
+    // Boutons internes à la modal — branchés après affichage de la page
+    setTimeout(() => {
+      const safe = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
+      safe('btnARCloseChoix', fermerAR);
+      safe('btnARCloseScene', fermerAR);
+      safe('btnARMarker', () => lancerAR('marker', lieu));
+      safe('btnARGPS',    () => lancerAR('gps',    lieu));
+    }, 300);
   }
 
   // INFOS
