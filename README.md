@@ -1,2 +1,2 @@
-# J E P.
+# J E P
 Application web JEP
