@@ -1,2 +1,2 @@
-# JPE
+# JEP
 Application web JPE
