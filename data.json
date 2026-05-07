@@ -1,11 +1,11 @@
 {
   "sentier": {
-    "nom": "Sentier du Patrimoine",
-    "sous_titre": "Vallée de la Sioule",
+    "nom": "Journée Européenne du Patrimoine",
+    "sous_titre": "Chevannes (Yonne)",
     "total_lieux": 8,
     "centre": {
-      "lat": 45.9842,
-      "lng": 3.1756
+      "lat": 47.751217,
+      "lng": 3.492074
     },
     "zoom_defaut": 14,
     "couleur_trace": "#4A6741"
@@ -25,11 +25,11 @@
       "description": "Le hameau de Vauluisant présente est présent sur les cartes Cassini",
       "citation": "« Le chemin commence toujours là où quelqu'un s'est arrêté. »",
       "audio": {
-        "titre": "L'histoire de Vauluisant",
+        "titre": "",
         "auteur": "",
-        "duree": "2:15",
-        "duree_sec": 135,
-        "fichier": "assets/audio/vauluisant.mp3"
+        "duree": "",
+        "duree_sec": 0,
+        "fichier": ""
       },
       "video": {
         "titre": "Visite des ruines",
@@ -37,8 +37,8 @@
         "url": "https://www.youtube.com/watch?v=jD2vSO1iLDE"
       },
       "ar": {
-        "titre": "Voir la chapelle au Moyen Âge",
-        "description": "Pointez votre caméra vers le panneau pour la reconstitution."
+        "titre": "",
+        "description": ""
       },
       "infos": {
         "visite": "Toute l'année",
@@ -64,6 +64,86 @@
       "rayon_declenchement": 25,
       "description": "Calvaire de la Biche en hommage à St Charles de Borromée",
       "citation": "",
+      "audio": {
+        "titre": "",
+        "auteur": "",
+        "duree": "",
+        "duree_sec": 0,
+        "fichier": ""
+      },
+      "video": {
+        "titre": "",
+        "duree": "",
+        "url": ""
+      },
+      "ar": {
+        "titre": "Voir le calvaire",
+        "description": "Pointez votre caméra vers le panneau pour la reconstitution."
+      },
+      "infos": {
+        "visite": "Privée",
+        "accessibilite": "Accessible PMR",
+        "animaux": "Chiens admis en laisse",
+        "reseau": "4G bonne couverture"
+      },
+      "photo_apres": "",
+      "photo_avant": "",
+      "label_apres": "",
+      "label_avant": ""
+    },
+    {
+      "id": "03",
+      "titre": "Château de la Borde",
+      "periode": "15ème siècle",
+      "altitude": "",
+      "duree_depuis_depart": "",
+      "gps": {
+        "lat": 47.735668,
+        "lng": 3.492923
+      },
+      "rayon_declenchement": 25,
+      "description": "Le Château de la Borde",
+      "citation": "Un Chevannais prend Auxerre",
+      "audio": {
+        "titre": "Le Capitaine de La Borde",
+        "auteur": "",
+        "duree": "02:15:00",
+        "duree_sec": 0,
+        "fichier": "assets/audio/laborde.mp3"
+      },
+      "video": {
+        "titre": "",
+        "duree": "",
+        "url": ""
+      },
+      "ar": {
+        "titre": "",
+        "description": ""
+      },
+      "infos": {
+        "visite": "Privée",
+        "accessibilite": "Accessible PMR",
+        "animaux": "Chiens admis en laisse",
+        "reseau": "4G bonne couverture"
+      },
+      "photo_apres": "",
+      "photo_avant": "",
+      "label_apres": "",
+      "label_avant": ""
+    },
+    {
+      "id": "04",
+      "titre": "Fontaine Madame",
+      "periode": "15ème siècle",
+      "altitude": "",
+      "duree_depuis_depart": "",
+      "gps": {
+        "lat": 47.754923,
+        "lng": 3.482458
+      },
+      "rayon_declenchement": 25,
+      "description": "Château de Fontaine Madame",
+      "citation": "Bla bla bla",
       "audio": {
         "titre": "",
         "auteur": "",

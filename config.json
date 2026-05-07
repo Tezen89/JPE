@@ -1,0 +1,18 @@
+{
+  "couleurs": {
+    "--moss": "#4343bf",
+    "--gold": "#ff756e",
+    "--cream": "#ffd8d1",
+    "--ink": "#171916",
+    "--earth": "#5d7a64",
+    "--stone": "#5d7a64",
+    "--parchment": "#ffffff"
+  },
+  "images": {
+    "logo.png": "assets/images/logo.png",
+    "lieu-01.jpg": "assets/images/lieu-01.jpg",
+    "lieu-01-archive.jpg": "assets/images/lieu-01-archive.jpg",
+    "lieu-02.jpg": "assets/images/lieu-02.jpg",
+    "lieu-02-archive.jpg": "assets/images/lieu-02-archive.jpg"
+  }
+}
